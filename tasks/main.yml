@@ -54,6 +54,9 @@
     become: yes
     tags: install
 
+  - name: Stop Nginx service
+    service: name=nginx state=stopped
+
   - name: Ensure webroot exists
     file:
       path: "{{ letsencrypt_webroot_path }}"
@@ -74,6 +77,9 @@
     become: yes
     args:
       creates: "/etc/letsencrypt/live/{{ letsencrypt_cert_domains[0] }}"
+
+  - name: Start Nginx service
+    service: name=nginx state=started
 
   - name: Fix the renewal file
     ini_file:
