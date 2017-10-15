@@ -56,6 +56,8 @@
 
   - name: Stop Nginx service
     service: name=nginx state=stopped
+    tags: 
+      - letsencrypt
 
   - name: Ensure webroot exists
     file:
@@ -63,47 +65,57 @@
       state: directory
       follow: yes
     become: yes
+    tags: 
+      - letsencrypt
 
   - name: Attempt to get the certificate using the webroot authenticator
-    command: "{{ letsencrypt_command }} -a webroot --webroot-path {{ letsencrypt_webroot_path }} certonly"
+    command: "{{ letsencrypt_command }} -d {{ item }} -a webroot --webroot-path {{ letsencrypt_webroot_path }} certonly"
     become: yes
     args:
-      creates: "/etc/letsencrypt/live/{{ letsencrypt_cert_domains[0] }}"
+      creates: "/etc/letsencrypt/live/{{ item }}"
     when: letsencrypt_authenticator == "webroot"
     ignore_errors: True
+    with_items: "{{ letsencrypt_cert_domains }}"
+    tags: 
+      - letsencrypt
 
   - name: Attempt to get the certificate using the standalone authenticator (in case eg the webserver isn't running yet)
-    command: "{{ letsencrypt_command }} -a standalone auth {{ letsencrypt_standalone_command_args }}"
+    command: "{{ letsencrypt_command }} -d {{ item }} -a standalone auth {{ letsencrypt_standalone_command_args }}"
     become: yes
     args:
-      creates: "/etc/letsencrypt/live/{{ letsencrypt_cert_domains[0] }}"
+      creates: "/etc/letsencrypt/live/{{ item }}"
+    with_items: "{{ letsencrypt_cert_domains }}"
+    tags: 
+      - letsencrypt
 
   - name: Start Nginx service
     service: name=nginx state=started
+    tags: 
+      - letsencrypt
 
   - name: Fix the renewal file
     ini_file:
       section: renewalparams
-      option: "{{ item.key }}"
-      value: "{{ item.value }}"
-      dest: "/etc/letsencrypt/renewal/{{ letsencrypt_cert_domains[0] }}.conf"
+      option: "{{ item.1.key }}"
+      value: "{{ item.1.value }}"
+      dest: "/etc/letsencrypt/renewal/{{ item.0 }}.conf"
     become: yes
-    with_dict:
-      os_packages_only: False
-      verb: certonly
-      noninteractive_mode: False
-      uir: False
-      hsts: False
-      authenticator: '{{ letsencrypt_authenticator }}'
+    with_nested: 
+      - "{{ letsencrypt_cert_domains }}"
+      - "{{ letsencrypt_renew_options }}"
+    tags: 
+      - letsencrypt
 
   - name: Fix the webroot map in the renewal file
     ini_file:
-      section: "[webroot_map]"
+      section: "webroot_map"
       option: "{{ item }}"
       value: "{{ letsencrypt_webroot_path }}"
-      dest: "/etc/letsencrypt/renewal/{{ letsencrypt_cert_domains[0] }}.conf"
+      dest: "/etc/letsencrypt/renewal/{{ item }}.conf"
     become: yes
     with_items: "{{ letsencrypt_cert_domains }}"
+    tags: 
+      - letsencrypt
 
   - name: Install renewal cron
     become: yes
