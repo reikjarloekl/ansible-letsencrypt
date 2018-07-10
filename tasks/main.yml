@@ -75,7 +75,7 @@
       creates: "/etc/letsencrypt/live/{{ item }}"
     when: letsencrypt_authenticator == "webroot"
     ignore_errors: True
-    with_items: "{{ letsencrypt_cert_domains }}"
+    with_items: "{{ wordpress_urls + letsencrypt_cert_domains }}"
     tags: 
       - letsencrypt
 
@@ -84,7 +84,7 @@
     become: yes
     args:
       creates: "/etc/letsencrypt/live/{{ item }}"
-    with_items: "{{ letsencrypt_cert_domains }}"
+    with_items: "{{ wordpress_urls + letsencrypt_cert_domains }}"
     tags: 
       - letsencrypt
 
@@ -92,6 +92,7 @@
     service: name=nginx state=started
     tags: 
       - letsencrypt
+    ignore_errors: "{{ ignore_nginx_errors }}"  
 
   - name: Fix the renewal file
     ini_file:
@@ -101,7 +102,7 @@
       dest: "/etc/letsencrypt/renewal/{{ item.0 }}.conf"
     become: yes
     with_nested: 
-      - "{{ letsencrypt_cert_domains }}"
+      - "{{ wordpress_urls + letsencrypt_cert_domains }}"
       - "{{ letsencrypt_renew_options }}"
     tags: 
       - letsencrypt
@@ -113,7 +114,7 @@
       value: "{{ letsencrypt_webroot_path }}"
       dest: "/etc/letsencrypt/renewal/{{ item }}.conf"
     become: yes
-    with_items: "{{ letsencrypt_cert_domains }}"
+    with_items: "{{ wordpress_urls + letsencrypt_cert_domains }}"
     tags: 
       - letsencrypt
 
