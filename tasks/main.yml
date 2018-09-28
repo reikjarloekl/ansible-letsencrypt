@@ -1,4 +1,7 @@
 ---
+  - set_fact:
+      letsencrypt_urls: "{{ wordpress_urls + letsencrypt_cert_domains + [ '{{ modx_url }}' ] }}"
+
   - apt: update_cache=yes cache_valid_time=3600
     become: yes
     when: ansible_pkg_mgr == "apt"
@@ -75,7 +78,7 @@
       creates: "/etc/letsencrypt/live/{{ item }}"
     when: letsencrypt_authenticator == "webroot"
     ignore_errors: True
-    with_items: "{{ wordpress_urls + letsencrypt_cert_domains }}"
+    with_items: "{{ letsencrypt_urls }}"
     tags: 
       - letsencrypt
 
@@ -84,7 +87,7 @@
     become: yes
     args:
       creates: "/etc/letsencrypt/live/{{ item }}"
-    with_items: "{{ wordpress_urls + letsencrypt_cert_domains }}"
+    with_items: "{{ letsencrypt_urls }}"
     tags: 
       - letsencrypt
 
@@ -102,7 +105,7 @@
       dest: "/etc/letsencrypt/renewal/{{ item.0 }}.conf"
     become: yes
     with_nested: 
-      - "{{ wordpress_urls + letsencrypt_cert_domains }}"
+      - "{{ letsencrypt_urls }}"
       - "{{ letsencrypt_renew_options }}"
     tags: 
       - letsencrypt
@@ -114,7 +117,7 @@
       value: "{{ letsencrypt_webroot_path }}"
       dest: "/etc/letsencrypt/renewal/{{ item }}.conf"
     become: yes
-    with_items: "{{ wordpress_urls + letsencrypt_cert_domains }}"
+    with_items: "{{ letsencrypt_urls }}"
     tags: 
       - letsencrypt
 
