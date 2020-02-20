@@ -69,7 +69,7 @@
       - letsencrypt
 
   - name: Attempt to get the certificate using the webroot authenticator
-    command: "{{ letsencrypt_command }} -d {{ item }} -a webroot --webroot-path {{ letsencrypt_webroot_path }} certonly"
+    command: "{{ letsencrypt_command }} -d {{ item }} -d www.{{ item }} -a webroot --webroot-path {{ letsencrypt_webroot_path }} certonly"
     become: yes
     args:
       creates: "/etc/letsencrypt/live/{{ item }}"
@@ -80,7 +80,7 @@
       - letsencrypt
 
   - name: Attempt to get the certificate using the standalone authenticator (in case eg the webserver isn't running yet)
-    command: "{{ letsencrypt_command }} -d {{ item }} -a standalone auth {{ letsencrypt_standalone_command_args }}"
+    command: "{{ letsencrypt_command }} -d {{ item }} -d www.{{ item }} -a standalone auth {{ letsencrypt_standalone_command_args }}"
     become: yes
     args:
       creates: "/etc/letsencrypt/live/{{ item }}"
