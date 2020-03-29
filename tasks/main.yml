@@ -125,4 +125,4 @@
       day: "{{ letsencrypt_renewal_frequency.day }}"
       hour: "{{ letsencrypt_renewal_frequency.hour }}"
       minute: "{{ letsencrypt_renewal_frequency.minute }}"
-      job: "{{ letsencrypt_venv }}/bin/letsencrypt renew --quiet {{ letsencrypt_renewal_command_args }}"
+      job: '{{ letsencrypt_venv }}/bin/letsencrypt renew --pre-hook "service nginx stop" --post-hook "service nginx start" --quiet {{ letsencrypt_renewal_command_args }}'
