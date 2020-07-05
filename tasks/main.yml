@@ -88,6 +88,15 @@
     tags: 
       - letsencrypt
 
+  - name: Attempt to get the certificate using the standalone authenticator without www prefix (in case eg the webserver isn't running yet)
+    command: "{{ letsencrypt_command }} -d {{ item }} -a standalone auth {{ letsencrypt_standalone_command_args }}"
+    become: yes
+    args:
+      creates: "/etc/letsencrypt/live/{{ item }}"
+    with_items: "{{ letsencrypt_cert_domains_no_www }}"
+    tags: 
+      - letsencrypt
+  
   - name: Start Nginx service
     service: name=nginx state=started
     tags: 
@@ -102,7 +111,7 @@
       dest: "/etc/letsencrypt/renewal/{{ item.0 }}.conf"
     become: yes
     with_nested: 
-      - "{{ wordpress_urls + letsencrypt_cert_domains }}"
+      - "{{ wordpress_urls + letsencrypt_cert_domains + letsencrypt_cert_domains_no_www }}"
       - "{{ letsencrypt_renew_options }}"
     tags: 
       - letsencrypt
@@ -114,7 +123,7 @@
       value: "{{ letsencrypt_webroot_path }}"
       dest: "/etc/letsencrypt/renewal/{{ item }}.conf"
     become: yes
-    with_items: "{{ wordpress_urls + letsencrypt_cert_domains }}"
+    with_items: "{{ wordpress_urls + letsencrypt_cert_domains + letsencrypt_cert_domains_no_www }}"
     tags: 
       - letsencrypt
 
